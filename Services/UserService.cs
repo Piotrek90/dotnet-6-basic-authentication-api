@@ -1,25 +1,32 @@
 namespace WebApi.Services;
 
+
 using WebApi.Entities;
 
 public interface IUserService
 {
     Task<User> Authenticate(string username, string password);
     Task<IEnumerable<User>> GetAll();
+    Task<User> Register(User user);
 }
 
 public class UserService : IUserService
 {
     // users hardcoded for simplicity, store in a db with hashed passwords in production applications
-    private List<User> _users = new List<User>
+    
+    UsersDbContext _usersDb;
+    public UserService()
     {
-        new User { Id = 1, FirstName = "Test", LastName = "User", Username = "test", Password = "test" }
-    };
+        _usersDb = new UsersDbContext();
+        _usersDb.Database.EnsureCreated();
+
+    }
+
 
     public async Task<User> Authenticate(string username, string password)
     {
         // wrapped in "await Task.Run" to mimic fetching user from a db
-        var user = await Task.Run(() => _users.SingleOrDefault(x => x.Username == username && x.Password == password));
+        var user = await Task.Run(() => _usersDb.Users.SingleOrDefault(x => x.Username == username && x.Password == password));
 
         // on auth fail: null is returned because user is not found
         // on auth success: user object is returned
@@ -29,6 +36,14 @@ public class UserService : IUserService
     public async Task<IEnumerable<User>> GetAll()
     {
         // wrapped in "await Task.Run" to mimic fetching users from a db
-        return await Task.Run(() => _users);
+        return await Task.Run(() => _usersDb.Users);
+    }
+
+    public async Task<User> Register(User user)
+    {
+        _usersDb.Add(user);
+        await _usersDb.SaveChangesAsync();
+
+        return await Authenticate(user.Username, user.Password);
     }
 }

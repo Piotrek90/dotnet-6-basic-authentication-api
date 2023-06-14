@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Authorization;
+using WebApi.Entities;
 using WebApi.Models;
 using WebApi.Services;
 
@@ -19,7 +20,7 @@ public class UsersController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("authenticate")]
-    public async Task<IActionResult> Authenticate([FromBody]AuthenticateModel model)
+    public async Task<IActionResult> Authenticate([FromBody] AuthenticateModel model)
     {
         var user = await _userService.Authenticate(model.Username, model.Password);
 
@@ -34,5 +35,18 @@ public class UsersController : ControllerBase
     {
         var users = await _userService.GetAll();
         return Ok(users);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] AuthenticateModel model)
+    {
+        User user = new User();
+        user.Username = model.Username;
+        user.Password = model.Password;
+        var resultUser = await _userService.Register(user);
+
+
+        return CreatedAtAction("Register",resultUser);
     }
 }
